@@ -1,0 +1,22 @@
+{
+  "name": "onso_db",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron src"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nico-3p/onso_db.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nico-3p/onso_db/issues"
+  },
+  "homepage": "https://github.com/nico-3p/onso_db#readme",
+  "devDependencies": {
+    "electron": "^20.1.1"
+  }
+}

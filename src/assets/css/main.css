@@ -1,0 +1,25 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+.cvsContainer {
+    position: relative;
+    width: 100vw;
+    /* overflow: scroll; */
+    overflow-x: auto;
+}
+
+.cvsContainer canvas, svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+/* .cvsContainer :last-child {
+    position: static;
+} */
+#waveSvg {
+    position: static;
+    top: 0;
+    left: 0;
+}
