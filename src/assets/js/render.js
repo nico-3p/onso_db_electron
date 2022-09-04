@@ -147,12 +147,6 @@ class OAnalyzer {
 
   }
 
-  static analyzeAudio(fileName) {
-    const WorldJS = Module.WorldJS;
-    const x = WorldJS.Wav2World(fileName);
-    console.log(x);
-    return x;
-  }
 }
 
 
