@@ -2,9 +2,9 @@
   "name": "onso_db",
   "version": "1.0.0",
   "description": "",
-  "main": "src/main.js",
+  "main": "main.js",
   "scripts": {
-    "start": "electron src"
+    "start": "electron ."
   },
   "repository": {
     "type": "git",
