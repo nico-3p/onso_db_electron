@@ -50,7 +50,7 @@ body {
 }
 .splitView.sidebar {
     min-width: 180px;
-    background-color: #252525;
+    background-color: #2d2d31;
 }
 .splitView.mainContent {
     flex-grow: 1;
@@ -58,31 +58,33 @@ body {
     background-color: #1e1e1e;
 }
 
+.mainContent .scrollContainer {
+    overflow-y: scroll;
+    height: 100%;
+}
+
+
+
+.stackWaveContainer {
+    position: relative;
+}
 .cvsContainer {
     position: relative;
     width: 100%;
-    /* overflow: scroll; */
     overflow-x: auto;
 }
-
-/* .cvsContainer canvas, svg {
-    position: absolute;
-    top: 0;
-    left: 0;
-} */
-.waveSvg {
-    position: static;
-    top: 0;
-    left: 0;
-}
-
-.stackWaveContainer {
-    height: 100%;
-    overflow-y: scroll;
-}
-/* .stackWaveContainer .cvsContainer {
-    overflow: hidden;
-} */
 .stackWaveContainer svg {
     width: 100%;
+}
+
+.marginAreaContainer {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: space-between;
+}
+.marginArea {
+    width: 120px;
+    background-color: #4a4f58;
 }

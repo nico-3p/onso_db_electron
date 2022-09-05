@@ -313,30 +313,51 @@ class OWave {
 
 class OStackWave {
   margin = 120;
-  _samplePerPx = 128;
-  
+  waveHeight = 80;
+  _samplePerPx = 64;
+
   constructor(oAudio, stackWaveContainer) {
     this.oAudio = oAudio;
     this.stackWaveContainer = stackWaveContainer;
 
-    // 余白なしの波形部分
-    this.waveWidth = this.stackWaveContainer.clientWidth - this.margin;
+    this.createWaveStack()
+    .then(() => {
+      console.log("end");
+    });
+  }
 
-    const count = Math.ceil(this.oAudio.pcmData.length / this._samplePerPx) / this.waveWidth
+  async createWaveStack() {
+    return new Promise((resolve) => {
+      // 余白なしの波形部分
+      this.waveWidth = this.stackWaveContainer.clientWidth - this.margin * 2;
 
-    for (let i = 0; i < count; i++) {
-      const cvsContainer = document.createElement("div");
-      cvsContainer.classList.add("cvsContainer");
-      this.stackWaveContainer.appendChild(cvsContainer);
+      // 合計何段の画像になるか
+      const waveCount = Math.ceil(this.oAudio.pcmData.length / this._samplePerPx) / this.waveWidth;
 
-      const height = 80;
-      const oWave = new OWave(this.oAudio, cvsContainer, height);
-      oWave._samplePerPx = this._samplePerPx
+      let i = 0;
+      // HACK: 画像描画を別スレッドに投げる
+      setInterval(() => {
+        if (i >= waveCount) {
+          return;
+        }
+        const cvsContainer = document.createElement("div");
+        cvsContainer.classList.add("cvsContainer");
+        this.stackWaveContainer.appendChild(cvsContainer);
 
-      oWave.leftPoint = (this.waveWidth * oWave.samplePerPx * i) - this.margin;
+        const oWave = new OWave(this.oAudio, cvsContainer, this.waveHeight);
+        oWave._samplePerPx = this._samplePerPx
 
-      oWave.drawWave();
-    }
+        oWave.leftPoint = (this.waveWidth) * oWave.samplePerPx * i;
+
+        oWave.drawWave();
+
+        i++;
+
+        if (i >= waveCount) {
+          resolve();
+        }
+      }, 0);
+    });
   }
 }
 
@@ -386,7 +407,7 @@ let oAudio;
     "./assets/audio/__誰より好きなのに.wav",
   ]
 
-  oAudio = new OAudio(srcList[4]);
+  oAudio = new OAudio(srcList[1]);
   await oAudio.getAudioBuffer();
   // console.log(oAudio);
 
