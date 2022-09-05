@@ -1,25 +1,88 @@
 * {
     margin: 0;
     padding: 0;
+    user-select: none;
+}
+
+body {
+    width: 100vw;
+    height: 100vh;
+}
+
+/* #007fd4 */
+
+/* サッシ */
+.sashContainer {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+.sash {
+    position: absolute;
+    z-index: 1;
+
+    width: 4px;
+    height: 100%;
+    /* border: #00000000 1px; */
+    cursor: e-resize;
+}
+.sash:hover {
+    background-color: #007fd4;
+    transition: background-color 0.1s 0s ease;
+}
+
+
+/* メインコンテナ */
+.splitViewContainer {
+    height: 100%;
+    display: flex;
+    position: relative;
+    overflow: hidden;
+}
+
+.splitView {
+    height: 100%;
+}
+.splitView.activitybar {
+    width: 48px;
+    min-width: 48px;
+    background-color: #333333;
+}
+.splitView.sidebar {
+    min-width: 180px;
+    background-color: #252525;
+}
+.splitView.mainContent {
+    flex-grow: 1;
+    min-width: 320px;
+    background-color: #1e1e1e;
 }
 
 .cvsContainer {
     position: relative;
-    width: 100vw;
+    width: 100%;
     /* overflow: scroll; */
     overflow-x: auto;
 }
 
-.cvsContainer canvas, svg {
+/* .cvsContainer canvas, svg {
     position: absolute;
     top: 0;
     left: 0;
-}
-/* .cvsContainer :last-child {
-    position: static;
 } */
-#waveSvg {
+.waveSvg {
     position: static;
     top: 0;
     left: 0;
+}
+
+.stackWaveContainer {
+    height: 100%;
+    overflow-y: scroll;
+}
+/* .stackWaveContainer .cvsContainer {
+    overflow: hidden;
+} */
+.stackWaveContainer svg {
+    width: 100%;
 }

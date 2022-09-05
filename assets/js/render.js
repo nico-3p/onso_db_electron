@@ -150,72 +150,35 @@ class OAnalyzer {
 }
 
 
-/**
- * キャンバス部
- */
-const oCanvasList = [];
-class OCanvas {
-  mode = "zoom";
+class OWave {
 
   leftPoint = 0;
   _samplePerPx = 128;
 
-  cvsList = {}; // canvasは複数枚重ねるため、連想配列に格納しておく
-
   waveSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   waveStep = 1;
   waveLineWidth = 1;
-  waveBlockSize = 256;
-
-  playSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  playLineSvg = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-  _playSvgPoint = -1;
-  _playSamplePoint = 0;
-  playLineWidth = 1;
-  playLineColor = "#000000";
 
   /**
    * @param {OAudio} oAudio 描画したい音声でインスタンス化されたOAudio
-   * @param {document} canvasContainer canvasを格納するコンテナ
+   * @param {document} cvsContainer canvasを格納するコンテナ
    * @param {number} height canvasの高さ
    */
-  constructor(oAudio, canvasContainer, height, mode = "zoom") {
-    oCanvasList.push(this);
-
+  constructor(oAudio, cvsContainer, height) {
     this.oAudio = oAudio;
-    this.cvsContainer = canvasContainer;
+    this.cvsContainer = cvsContainer;
 
     this.width = 0;
     this._height = height;
 
-    this.waveSvg.id = "waveSvg";
+    this.waveSvg.classList.add("waveSvg");
     this.cvsContainer.appendChild(this.waveSvg);
 
-    this.playSvg.id = "playSvg";
-    this.cvsContainer.appendChild(this.playSvg);
-
-    this.playLineSvg.id = "playLineSvg";
-    this.playSvg.appendChild(this.playLineSvg);
-
-    this.createNewCanvas("select");
-    // this.createNewCanvas("line");
-
-    this.mode = mode;
-    if (this.mode == "over") {
-      this._samplePerPx = Math.min(Math.ceil(this.oAudio.pcmData.length / window.innerWidth), 2048);
-    }
-
-    this.resizeCanvas();
-
-    // this.createWaveLine();
-    this.drawWave();
-
-    this.addEvent();
+    this.resizeWave();
+    // this.drawWave();
   }
 
 
-
-  /* ==== get/set ==== */
 
   // height
   get height() {
@@ -223,7 +186,8 @@ class OCanvas {
   }
   set height(h) {
     this._height = h;
-    this.resizeCanvas();
+    this.clearWave();
+    this.resizeWave();
     this.drawWave();
   }
 
@@ -233,120 +197,43 @@ class OCanvas {
   }
   set samplePerPx(s) {
     this._samplePerPx = s;
-    this.resizeCanvas();
+    this.clearWave();
+    this.resizeWave();
     this.drawWave();
   }
 
-  // playSvgPoint
-  get playSvgPoint() {
-    return this._playSvgPoint;
-  }
-  set playSvgPoint(x) {
-    this._playSvgPoint = x;
-    OCanvas.synchronizePlayPoint(x * this._samplePerPx);
-  }
 
-  // playSamplePoint
-  get playSamplePoint() {
-    return this._playSamplePoint;
-  }
-  set playSamplePoint(p) {
-    this._playSamplePoint = p;
-    OCanvas.synchronizePlayPoint(p);
-  }
-
-
-
-  /* ==== メソッド ==== */
 
   /**
-   * 新しいcanvasを作成しコンテナに追加
-   * キャンバスをレイヤさせるために連想配列に格納
-   * @param {string} key レイヤ識別キー
+   * 波形の削除
    */
-  createNewCanvas(key) {
-    const cvs = document.createElement("canvas");
-    cvs.classList.add("cvs_" + key); // 必要ないかも
-
-    this.cvsList[key] = {
-      "cvs": cvs,
-      "ctx": cvs.getContext('2d'),
-    };
-
-    this.cvsContainer.appendChild(cvs);
+  clearWave() {
+    this.waveSvg.innerHTML = null;
   }
 
   /**
-   * canvasのサイズを指定
+   * 波形コンテナのリサイズ
    */
-  resizeCanvas() {
+  resizeWave() {
     this.clacCvsSize();
 
-    const svgs = [
-      this.waveSvg,
-      this.playSvg,
-    ]
-    // this.waveSvg.setAttribute("width", window.innerWidth);
-    // this.waveSvg.setAttribute("viewbox", `0 0 ${window.innerWidth} ${this.height}`);
-
-
-
-    for (let s of svgs) {
-      s.setAttribute("width", this.width);
-      s.setAttribute("height", this.height);
-      s.setAttribute("viewbox", `0 0 ${this.width} ${this.height}`);
-    }
-
-
-    for (let key in this.cvsList) {
-      this.cvsList[key].cvs.width = this.width;
-      this.cvsList[key].cvs.height = this._height;
-    }
+    // this.waveSvg.setAttribute("width", this.width);
+    this.waveSvg.setAttribute("height", this.height);
+    // this.waveSvg.setAttribute("viewbox", `0 0 ${this.width} ${this.height}`);
   }
 
   /**
    * 音声データのサイズからwidthを計算
    */
   clacCvsSize() {
-    this.width = Math.ceil(this.oAudio.pcmData.length / this._samplePerPx);
-  }
-
-  /**
-   * canvasの内容を消す
-   * key が無記入の場合、再起呼び出しで全部クリア
-   * @param {string} key レイヤ識別キー
-   */
-  clearCanvas(key = "") {
-    // key が無記入の場合、再起呼び出しで全部クリア
-    if (key === "") {
-      for (let k in this.cvsList) {
-        this.clearCanvas(k);
-      }
-      return;
-    }
-
-    this.cvsList[key].ctx.clearRect(0, 0, this.cvsList[key].cvs.width, this.cvsList[key].cvs.height);
-    this.cvsList[key].ctx.beginPath();
+    // this.width = Math.ceil(this.oAudio.pcmData.length / this._samplePerPx);
+    this.width = this.cvsContainer.clientWidth;
   }
 
   /**
    * 音声波形の描画
    */
-  // createWaveLine() {
-  //   const lim = window.innerWidth - this.waveSvg.childElementCount;
-
-  //   console.log("window.innerWidth", window.innerWidth);
-  //   console.log("this.waveSvg.childElementCount", this.waveSvg.childElementCount);
-  //   console.log("lim", lim);
-
-  //   for (let i = 0; i < lim; i++) {
-  //     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-  //     this.waveSvg.appendChild(line);
-  //   }
-  // }
   drawWave() {
-    this.resizeCanvas();
-
     const paramList = this.drawWave_clacPram();
     this.drawWave_pushSvg(paramList);
 
@@ -365,7 +252,7 @@ class OCanvas {
 
     while (true) {
       if (i >= this.oAudio.pcmData.length) break;
-      // if (x > this.width) break;
+      if (x > this.width) break;
 
       const newD = this.oAudio.pcmData.slice(i, i + this._samplePerPx * this.waveStep);
       const max = Math.max(...newD);
@@ -406,9 +293,9 @@ class OCanvas {
 
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
 
-      line.setAttribute('x1', e.x);
+      line.setAttribute('x1', e.x + 0.5);
       line.setAttribute('y1', e.ys);
-      line.setAttribute('x2', e.x);
+      line.setAttribute('x2', e.x + 0.5);
       line.setAttribute('y2', e.ye);
       line.setAttribute('stroke', OUtility.hsv2rgb(180).hex);
       line.setAttribute('stroke-width', this.waveLineWidth);
@@ -421,110 +308,35 @@ class OCanvas {
       this.waveSvg.appendChild(line);
     });
   }
-
-  /**
-   * 波形の色変更
-   */
-  async setWaveColor() {
-    const lines = Array.from(this.waveSvg.querySelectorAll("line"));
-
-    lines.forEach((line, i) => {
-      const h = Math.min((Math.abs(line.dataset.max) + Math.abs(line.dataset.min)) * 2, 1) * -240 + 240;
-      line.setAttribute('stroke', OUtility.hsv2rgb(h).hex);
-    });
-
-    // const response = await fetch("assets/sample.lab");
-    // const text = await response.text();
-    // const timestamp = text.split(/\r\n|\n|\r/).map(e => e.split(" "));
-    // console.log(timestamp);
-
-    // timestamp.forEach((t, i) => {
-    //   const s = t[0] * this.oAudio.sampleRate / this._samplePerPx;
-    //   const e = t[1] * this.oAudio.sampleRate / this._samplePerPx;
-    //   console.log("s", s, "e", e);
-    //   console.log(this.oAudio.sampleRate);
-    //   lines.slice(s, e).map(e => e.setAttribute('stroke', OUtility.hsv2rgb(i*60).hex));
-    // });
-  }
-
-  movePlayPoint(x = -1) {
-    this._playSamplePoint = x * this._samplePerPx;
-
-    this.oAudio.playStartSec = this._playSamplePoint / this.oAudio.sampleRate;
-
-    OCanvas.synchronizePlayPoint(this._playSamplePoint);
-    OCanvas.scrollCenter(this);
-  }
-
-  /**
-   * 
-   * @param {number} sp playSamplePoint
-   */
-  static synchronizePlayPoint(sp = -1) {
-    oCanvasList.map(e => {
-      if (sp != -1) {
-        e._playSamplePoint = sp;
-        e._playSvgPoint = sp / e._samplePerPx;
-      }
-
-      e.playLineSvg.setAttribute('x1', e._playSvgPoint);
-      e.playLineSvg.setAttribute('y1', 0);
-      e.playLineSvg.setAttribute('x2', e._playSvgPoint);
-      e.playLineSvg.setAttribute('y2', e._height);
-      e.playLineSvg.setAttribute('stroke', e.playLineColor);
-      e.playLineSvg.setAttribute('stroke-width', e.playLineWidth);
-    });
-  }
-
-  static scrollCenter(me = null) {
-    oCanvasList.map(e => {
-      if (me == e) return;
-
-      const p = e._playSvgPoint - (window.innerWidth / 2);
-      e.cvsContainer.scrollTo(p, 0);
-    });
-  }
+}
 
 
-  /* ==== イベント ==== */
+class OStackWave {
+  margin = 120;
+  _samplePerPx = 128;
+  
+  constructor(oAudio, stackWaveContainer) {
+    this.oAudio = oAudio;
+    this.stackWaveContainer = stackWaveContainer;
 
-  isMouseDown = false;
+    // 余白なしの波形部分
+    this.waveWidth = this.stackWaveContainer.clientWidth - this.margin;
 
-  addEvent() {
-    this.cvsContainer.addEventListener("scroll", (e) => { this.onScroll(this, e) }, false);
+    const count = Math.ceil(this.oAudio.pcmData.length / this._samplePerPx) / this.waveWidth
 
-    this.cvsContainer.addEventListener("mousedown", (e) => { this.onMouesDown(this, e) }, false);
-    this.cvsContainer.addEventListener("mousemove", (e) => { this.onMouesMove(this, e) }, false);
-    this.cvsContainer.addEventListener("mouseup", (e) => { this.onMouesUp(this, e) }, false);
-  }
+    for (let i = 0; i < count; i++) {
+      const cvsContainer = document.createElement("div");
+      cvsContainer.classList.add("cvsContainer");
+      this.stackWaveContainer.appendChild(cvsContainer);
 
-  onScroll(ts, e) {
-    // ts.leftPoint = ts.cvsContainer.scrollLeft * ts._samplePerPx;
+      const height = 80;
+      const oWave = new OWave(this.oAudio, cvsContainer, height);
+      oWave._samplePerPx = this._samplePerPx
 
-    // console.log(ts.leftPoint);
+      oWave.leftPoint = (this.waveWidth * oWave.samplePerPx * i) - this.margin;
 
-    // ts.drawWave();
-  }
-
-  onMouesDown(ts, e) {
-    ts.isMouseDown = true;
-
-    ts.movePlayPoint(e.offsetX);
-
-    if (ts.oAudio.isPlaying) {
-      ts.oAudio.isPlaying = false;
-      ts.oAudio.stopAudio();
+      oWave.drawWave();
     }
-  }
-
-  onMouesMove(ts, e) {
-    if (!ts.isMouseDown) return;
-
-    ts.movePlayPoint(e.offsetX);
-  }
-
-  onMouesUp(ts, e) {
-    ts.isMouseDown = false;
   }
 }
 
@@ -570,19 +382,28 @@ let oAudio;
     "./assets/audio/WDC_Fu_Vocal_2.wav",
     "./assets/audio/sel.wav",
     "./assets/audio/sample.wav",
+    "./assets/audio/_めぐる_Happy_1a.wav",
+    "./assets/audio/__誰より好きなのに.wav",
   ]
 
-  oAudio = new OAudio(srcList[1]);
+  oAudio = new OAudio(srcList[4]);
   await oAudio.getAudioBuffer();
   // console.log(oAudio);
 
-  const cvsOverContainer = document.getElementById("overviewContainer");
-  const oCanvas_over = new OCanvas(oAudio, cvsOverContainer, 60, "over");
+  // const cvsOverContainer = document.getElementById("overviewContainer");
+  // const oCanvas_over = new OCanvas(oAudio, cvsOverContainer, 60, "over");
 
-  const cvsZoomContainer = document.getElementById("zoomviewContainer");
-  const oCanvas_zoom = new OCanvas(oAudio, cvsZoomContainer, 320);
+  // const cvsZoomContainer = document.getElementById("zoomviewContainer");
+  // const oCanvas_zoom = new OCanvas(oAudio, cvsZoomContainer, 80);
 
-  console.log(oCanvasList);
+  const stackWaveContainer = document.querySelector(".stackWaveContainer");
+  new OStackWave(oAudio, stackWaveContainer);
+
+  // for (let i = 0; i < wList.length; i++) {
+  //   const os = new OStackWave(oAudio, wList[i], 80);
+  //   os.drawWave();
+  // }
+  // console.log(oCanvasList);
 
   // console.log(oAudio.pcmData);
   // const array =  Array.prototype.slice.call(oAudio.pcmData);
@@ -594,7 +415,7 @@ let oAudio;
   // }, 1000);
 
 
-  const input_audioFile = document.getElementById("input_audioFile");
+  // const input_audioFile = document.getElementById("input_audioFile");
 
   // input_audioFile.addEventListener("change", () => {
   //   const data = new Uint8Array(input_audioFile.result);
