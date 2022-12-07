@@ -1,2 +1,2 @@
 # onso_db_electron
-頓挫
+供養
