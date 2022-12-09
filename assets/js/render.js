@@ -150,6 +150,9 @@ class OAnalyzer {
 }
 
 
+/**
+ * 波形描画
+ */
 class OWave {
 
   leftPoint = 0;
@@ -311,10 +314,13 @@ class OWave {
 }
 
 
+/**
+ * 波形積層
+ */
 class OStackWave {
-  margin = 120;
-  waveHeight = 80;
-  _samplePerPx = 64;
+  margin = 120; // [px]
+  waveHeight = 80; // [px]
+  _samplePerPx = 16; // [sample]
 
   constructor(oAudio, stackWaveContainer) {
     this.oAudio = oAudio;
@@ -399,61 +405,17 @@ class OUtility {
 let oAudio;
 (async () => {
   const srcList = [
-    "./assets/audio/off.wav",
     "./assets/audio/WDC_Fu_Vocal_2.wav",
-    "./assets/audio/sel.wav",
-    "./assets/audio/sample.wav",
-    "./assets/audio/_めぐる_Happy_1a.wav",
     "./assets/audio/__誰より好きなのに.wav",
+
   ]
 
-  oAudio = new OAudio(srcList[1]);
+  oAudio = new OAudio(srcList[0]);
   await oAudio.getAudioBuffer();
   // console.log(oAudio);
 
-  // const cvsOverContainer = document.getElementById("overviewContainer");
-  // const oCanvas_over = new OCanvas(oAudio, cvsOverContainer, 60, "over");
-
-  // const cvsZoomContainer = document.getElementById("zoomviewContainer");
-  // const oCanvas_zoom = new OCanvas(oAudio, cvsZoomContainer, 80);
 
   const stackWaveContainer = document.querySelector(".stackWaveContainer");
   new OStackWave(oAudio, stackWaveContainer);
-
-  // for (let i = 0; i < wList.length; i++) {
-  //   const os = new OStackWave(oAudio, wList[i], 80);
-  //   os.drawWave();
-  // }
-  // console.log(oCanvasList);
-
-  // console.log(oAudio.pcmData);
-  // const array =  Array.prototype.slice.call(oAudio.pcmData);
-  // const t = await window.electronAPI.analyzeTest(JSON.stringify(array));
-  // console.log(JSON.parse(t));
-
-  // setTimeout(() => {
-  //   OAnalyzer.analyzeAudio("/Users/yec2020/Desktop/development/Electron/onso_DB/src/assets/audio/WDC_Fu_Vocal_2.wav");
-  // }, 1000);
-
-
-  // const input_audioFile = document.getElementById("input_audioFile");
-
-  // input_audioFile.addEventListener("change", () => {
-  //   const data = new Uint8Array(input_audioFile.result);
-
-  //   g['FS_createDataFile']('/', 'filename', data, true, true, true)
-  //   // FS
-
-
-
-
-  //   // console.log(input_audioFile.files);
-  //   // console.log(filePath);
-
-  //   // window.electronAPI.analyzeTest(filePath);
-
-  //   // OAnalyzer.analyzeAudio(filePath);
-
-  // }, false);
 })();
 
