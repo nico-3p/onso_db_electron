@@ -19,7 +19,7 @@ const createWindow = () => {
   })
 
   // そしてアプリの index.html を読み込みます。
-  mainWindow.loadFile('index copy.html');
+  mainWindow.loadFile('index.html');
 
   // デベロッパー ツールを開きます。
   mainWindow.webContents.openDevTools();

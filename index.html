@@ -7,13 +7,33 @@
         <link rel="stylesheet" href="assets/css/main.css">
     </head>
     <body>
-        <div id="overviewContainer" class="cvsContainer"></div>
-        <div id="zoomviewContainer" class="cvsContainer"></div>
+        <!-- スライド用サッシ -->
+        <div class="sashContainer">
+            <div class="sash sash_sidebar" style="left: 226px;"></div>
+        </div>
 
-        <input type="file" name="input_audioFile" id="input_audioFile">
+        <!-- メインコンテナ -->
+        <div class="splitViewContainer">
+            <div class="splitView activitybar"></div>
+            <div class="splitView sidebar" style="width: 180px; color: white;">
+                <p>こんにちは</p>
+                <p>世界</p>
+            </div>
+            <div class="splitView mainContent">
+                <div class="scrollContainer">
+                    <div class="stackWaveContainer">
+                        <div class="marginAreaContainer">
+                            <div class="marginArea areaLeft"></div>
+                            <div class="marginArea areaRight"></div>
+                        </div>
+                        <!-- <div class="cvsContainer"></div> -->
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script> -->
-        <script src="WorldJS.js"></script>
-        <script src="assets/js/render.js"></script>
+        <!-- スクリプト群 -->
+        <script src="assets\js\uiController.js"></script>
+        <script src="assets\js\render.js"></script>
     </body>
 </html>
