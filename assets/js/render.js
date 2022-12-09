@@ -89,6 +89,7 @@ class OAudio {
     this.audioElement.play();
 
     // 再生位置縦線の再描画, 指定秒数で停止
+    clearInterval(this.timer_play);
     this.timer_play = setInterval(() => {
       // 引数endSecが指定されている場合、その秒数で停止
       if (endSec != -1 && this.audioElement.currentTime >= endSec) {
@@ -96,8 +97,8 @@ class OAudio {
         this.isPlaying = false;
       }
 
-      const sPoint = this.audioElement.currentTime * this.sampleRate; // 現在の再生フレーム位置
-      OCanvas.synchronizePlayPoint(sPoint); // 再描画
+      // const sPoint = this.audioElement.currentTime * this.sampleRate; // 現在の再生フレーム位置
+      // OCanvas.synchronizePlayPoint(sPoint); // 再描画
     }, 1000 / 60);
   }
 
@@ -108,8 +109,8 @@ class OAudio {
     this.audioElement.pause();
     clearInterval(this.timer_play);
 
-    const sPoint = this.playStartSec * this.sampleRate;
-    OCanvas.synchronizePlayPoint(sPoint);
+    // const sPoint = this.playStartSec * this.sampleRate;
+    // OCanvas.synchronizePlayPoint(sPoint);
   }
 
 
@@ -119,13 +120,15 @@ class OAudio {
    * イベント作成
    */
   addEvent() {
-    document.addEventListener("keypress", (e) => {
-      const keyCode = e.code;
 
-      if (keyCode == "Space") {
-        this.onPressSpace(this, e);
-      }
-    }, false);
+    // そもそもクラス内でキー押下時のイベントを作成するのは間違っている
+    // document.addEventListener("keypress", (e) => {
+    //   const keyCode = e.code;
+
+    //   if (keyCode == "Space") {
+    //     this.onPressSpace(this, e);
+    //   }
+    // }, false);
   }
 
   /**
@@ -320,7 +323,7 @@ class OWave {
 class OStackWave {
   margin = 120; // [px]
   waveHeight = 80; // [px]
-  _samplePerPx = 16; // [sample]
+  _samplePerPx = 512; // [sample]
 
   constructor(oAudio, stackWaveContainer) {
     this.oAudio = oAudio;
@@ -407,15 +410,17 @@ let oAudio;
   const srcList = [
     "./assets/audio/WDC_Fu_Vocal_2.wav",
     "./assets/audio/__誰より好きなのに.wav",
+    "./assets/audio/_Happy Funny Lucky_真乃.wav",
 
   ]
 
-  oAudio = new OAudio(srcList[0]);
+  oAudio = new OAudio(srcList[2]);
   await oAudio.getAudioBuffer();
-  // console.log(oAudio);
+  console.log(oAudio);
 
 
   const stackWaveContainer = document.querySelector(".stackWaveContainer");
-  new OStackWave(oAudio, stackWaveContainer);
+  const oStackWave = new OStackWave(oAudio, stackWaveContainer);
+  console.log(oStackWave);
 })();
 
