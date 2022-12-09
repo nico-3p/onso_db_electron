@@ -1,5 +1,3 @@
-
-
 class SashControl {
     /**
      * @param {document} sash サッシ要素
@@ -19,7 +17,7 @@ class SashControl {
     }
     x = 180;
     sashWidth = 4;
-
+    sashColor = "#007fd4";
     
     enable() {
         this.content.style.display = "";
@@ -56,7 +54,8 @@ class SashControl {
     moveflag = false;
     onMousedown(ts, e) {
         ts.moveflag = true;
-        ts.sash.style.backgroundColor = "#007fd4";
+        ts.sash.style.backgroundColor = ts.sashColor;
+        document.body.style.cursor = "e-resize";
     }
     onMousemove(ts, e) {
         if (!ts.moveflag) return;
@@ -68,7 +67,8 @@ class SashControl {
         if (!ts.moveflag) return;
 
         ts.moveflag = false;
-        ts.sash.style.backgroundColor = "";
+        ts.sash.style.backgroundColor = null;
+        document.body.style.cursor = null;
     }
 
     onWindowResize(ts, e) {
