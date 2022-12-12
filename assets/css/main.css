@@ -2,6 +2,35 @@
     margin: 0;
     padding: 0;
     user-select: none;
+
+    --accent-color: #4dffff;
+    --footer-height: 22px;
+}
+
+*::-webkit-scrollbar{
+    width: 12px;
+    height: 12px;
+}
+*::-webkit-scrollbar-track{
+    background-color: #555;
+}
+*::-webkit-scrollbar-thumb{
+    background-color: #a7a7a7;
+}
+*::-webkit-resizer{
+    width: 12px;
+    height: 12px;
+    background-color: #555;
+}
+
+progress {
+    -webkit-appearance: none;
+}
+::-webkit-progress-bar {
+    background-color: gray;
+}
+::-webkit-progress-value {
+    background-color: aqua;
 }
 
 body {
@@ -20,24 +49,31 @@ body {
 .sash {
     position: absolute;
     z-index: 100;
-
-    width: 4px;
-    height: 100%;
-    /* border: #00000000 1px; */
-    cursor: e-resize;
 }
 .sash:hover {
     background-color: #007fd4;
     transition: background-color 0.1s 0s ease;
 }
+.sash.sash_horizontal {
+    width: 4px;
+    height: 100%;
+    cursor: e-resize;
+}
+.sash.sash_vertical {
+    width: 100%;
+    height: 4px;
+    cursor: s-resize;
+}
 
 
 /* メインコンテナ */
 .splitViewContainer {
-    height: 100%;
+    height: calc(100% - var(--footer-height));
     display: flex;
     position: relative;
     overflow: hidden;
+
+    /* padding-bottom: var(--footer-height); */
 }
 
 .splitView {
@@ -56,6 +92,9 @@ body {
     flex-grow: 1;
     min-width: 320px;
     background-color: #1e1e1e;
+
+    display: flex;
+    flex-direction: column;
 }
 
 .mainContent .scrollContainer {
@@ -64,14 +103,32 @@ body {
 }
 
 
+.lyricTextareaContainer textarea {
+    /* width: calc(100% - 2px); */
+    width: 100%;
+    height: 6rem;
+    min-height: 1rem;
+    /* margin: 3px 0px 0px; */
+
+    color: #fff;
+    background-color: #333;
+    border: none;
+
+    resize: vertical;
+}
+.lyricTextareaContainer textarea:focus-visible {
+    outline-width: 0;
+}
 
 .stackWaveContainer {
     position: relative;
 }
-.cvsContainer {
+.rowContainer {
     position: relative;
     width: 100%;
-    overflow-x: auto;
+}
+.upperContainer {
+    background-color: #64646448;
 }
 .stackWaveContainer svg {
     width: 100%;
@@ -87,4 +144,35 @@ body {
 .marginArea {
     width: 120px;
     background-color: #4a4f58;
+}
+
+
+/* フッター */
+
+.footer {
+    width: 100%;
+    height: var(--footer-height);
+    position: fixed;
+    bottom: 0;
+    background-color: #00b2b3;
+
+    font-size: 12px;
+    color: #fff;
+
+    display: flex;
+    justify-content: space-between;
+}
+.footer>div {
+    display: flex;
+}
+.footer span, .footer progress {
+    height: 100%;
+    align-items: center;
+    display: inline-grid;
+    margin: 0 3px;
+    padding: 0 3px;
+}
+
+#footProg {
+    
 }

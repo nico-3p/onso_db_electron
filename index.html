@@ -9,8 +9,10 @@
     <body>
         <!-- スライド用サッシ -->
         <div class="sashContainer">
-            <div class="sash sash_sidebar" style="left: 226px;"></div>
+            <div class="sash sash_horizontal sash_sidebar" style="left: 226px;"></div>
+            <div class="sash sash_vertical" style="top: 98px;"></div>
         </div>
+
 
         <!-- メインコンテナ -->
         <div class="splitViewContainer">
@@ -20,15 +22,32 @@
                 <p>世界</p>
             </div>
             <div class="splitView mainContent">
+                <div class="mainUpperContainer">
+                    <div class="lyricTextareaContainer">
+                        <textarea spellcheck="false"></textarea>
+                    </div>
+                </div>
                 <div class="scrollContainer">
                     <div class="stackWaveContainer">
                         <div class="marginAreaContainer">
                             <div class="marginArea areaLeft"></div>
                             <div class="marginArea areaRight"></div>
                         </div>
-                        <!-- <div class="cvsContainer"></div> -->
+                        <!-- <div class="rowContainer">
+                            <div class="cvsContainer"></div>
+                        </div> -->
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="footLeft">
+                <span id="footMsg">test</span>
+                <progress id="footProg" value="30" max="100"></progress>
+            </div>
+            <div class="footRight">
+                <!-- <span>aaa</span> -->
             </div>
         </div>
 

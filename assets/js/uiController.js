@@ -8,12 +8,13 @@ class SashControl {
      * @param {number} offset コンテナ横の余白
      * @param {number} limit コンテナの最低サイズ
      */
-    constructor(sash, content, offset, limit) {
+    constructor(sash, content, offset, limitL, limitR) {
         this.sash = sash;
         this.content = content;
 
         this.offset = offset;
-        this.limit = limit;
+        this.limitL = limitL;
+        this.limitR = limitR;
 
         // リサイズ時にデザインが崩れないようにするためのスペーサー
         this.spacerElement = document.createElement("div");
@@ -27,26 +28,27 @@ class SashControl {
     x = 0;
     sashWidth = 4;
     sashColor = "#007fd4";
-    
+
     enable() {
         this.content.style.display = "";
-        // this.content.style.width = this.limit + "px";
+        // this.content.style.width = this.limitL + "px";
         this.sash.style.left = this.content.clientWidth + this.offset - (this.sashWidth / 2) + "px";
     }
     disable() {
         this.content.style.display = "none";
-        // this.content.style.width = this.limit + "px";
+        // this.content.style.width = this.limitL + "px";
         this.sash.style.left = this.offset - (this.sashWidth / 2) + "px";
     }
 
     move() {
-        if (this.x >= this.limit + this.offset) {
+        console.log(window.innerWidth - this.offset - this.x);
+        if ((this.x >= this.limitL + this.offset) && (window.innerWidth - this.offset - this.x >= this.limitR)) {
             this.content.style.display = "";
             this.content.style.width = this.x - this.offset + "px";
             // this.content.style.width = this.content.clientWidth + "px";
             this.sash.style.left = this.content.clientWidth + this.offset - (this.sashWidth / 2) + "px";
         }
-        else if (this.x < (this.limit / 2) + this.offset) {
+        else if (this.x < (this.limitL / 2) + this.offset) {
             this.disable();
         }
     }
@@ -95,6 +97,10 @@ class SashControl {
         ts.sash.style.backgroundColor = null;
         document.body.style.cursor = null;
 
+        // サッシのx座標の更新
+        ts.x = ts.content.offsetWidth + ts.offset;
+        ts.sash.style.left = ts.x - (ts.sashWidth / 2) + "px";
+
         // absolute 解除
         ts.content.style.position = null;
         ts.content.style.zIndex = null;
@@ -112,7 +118,7 @@ class SashControl {
 (() => {
     const sash_sidebar = new SashControl(document.querySelector(".sashContainer .sash_sidebar"),
         document.querySelector(".splitViewContainer .sidebar"),
-        48, 180);
+        48, 180, 320);
     
-    console.log(sash_sidebar);
+    // console.log(sash_sidebar);
 })();

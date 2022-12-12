@@ -170,17 +170,19 @@ class OWave {
    * @param {document} cvsContainer canvasを格納するコンテナ
    * @param {number} height canvasの高さ
    */
-  constructor(oAudio, cvsContainer, height) {
+  constructor(oAudio, cvsContainer, height, width = 0) {
     this.oAudio = oAudio;
     this.cvsContainer = cvsContainer;
 
-    this.width = 0;
+    this.width = width;
     this._height = height;
 
     this.waveSvg.classList.add("waveSvg");
     this.cvsContainer.appendChild(this.waveSvg);
 
-    this.resizeWave();
+    if (this.width === 0) {
+      this.resizeWave();
+    }
     // this.drawWave();
   }
 
@@ -264,10 +266,10 @@ class OWave {
       const max = Math.max(...newD);
       const min = Math.min(...newD);
 
-      let ys = max * this._height / 2 + this._height / 2;
-      let ye = min * this._height / 2 + this._height / 2;
+      let ys = -1 * max * this._height / 2 + this._height / 2;
+      let ye = -1 * min * this._height / 2 + this._height / 2;
 
-      if (ys - ye < 1) {
+      if (ye - ys < 1) {
         ys = 0.25 + this._height / 2;
         ye = -0.25 + this._height / 2;
       }
@@ -293,6 +295,8 @@ class OWave {
   drawWave_pushSvg(paramList) {
     // const lines = Array.from(this.waveSvg.querySelectorAll("line"));
 
+    const fragment = document.createDocumentFragment();
+
     paramList.forEach((e, i) => {
       // const e = paramList[i];
       // if (e == undefined) return;
@@ -311,8 +315,10 @@ class OWave {
       line.dataset.max = e.max;
       line.dataset.min = e.min;
 
-      this.waveSvg.appendChild(line);
+      fragment.appendChild(line);
     });
+
+    this.waveSvg.appendChild(fragment);
   }
 }
 
@@ -321,13 +327,24 @@ class OWave {
  * 波形積層
  */
 class OStackWave {
-  margin = 120; // [px]
-  waveHeight = 80; // [px]
-  _samplePerPx = 512; // [sample]
+  horizontalMargin = 120; // 左右の余白 [px]
+
+  upperHeight = 16; // 上余白コンテナの縦幅 [px]
+
+  waveHeight = 70; // 波形の縦幅 [px]
+  waveMargin = 2; // 波形の上下方向の余白 [px]
+
+  _samplePerPx = 128; // 1px毎に何サンプル入っているか [sample]
+
+  drawingRowsRange = 50 // 一度に描画する行数
+
+  oWaveList = [];
 
   constructor(oAudio, stackWaveContainer) {
     this.oAudio = oAudio;
     this.stackWaveContainer = stackWaveContainer;
+
+    this.addEvent();
 
     this.createWaveStack()
     .then(() => {
@@ -335,38 +352,102 @@ class OStackWave {
     });
   }
 
+
+  // == get/set== //
+
+  // samplePerPx
+  get samplePerPx() {
+    return this._samplePerPx;
+  }
+  set samplePerPx(s) {
+    this._samplePerPx = s;
+    this.resizeWave();
+  }
+
+
+  // == メソッド == //
+
+  addEvent() {
+    // リサイズ用
+    (() => {
+      let timer = 0;
+
+      const observer = new ResizeObserver((entries) => {
+        if (timer > 0) {
+          clearTimeout(timer);
+        }
+       
+        timer = setTimeout(() => {
+          this.resizeWave();
+        }, 100);
+      });
+      observer.observe(this.stackWaveContainer, {
+        attriblutes: true,
+        attributeFilter: ["style"]
+      });
+    })();
+  }
+
+
+
   async createWaveStack() {
     return new Promise((resolve) => {
       // 余白なしの波形部分
-      this.waveWidth = this.stackWaveContainer.clientWidth - this.margin * 2;
+      this.waveWidth = this.stackWaveContainer.clientWidth - this.horizontalMargin * 2;
 
       // 合計何段の画像になるか
       const waveCount = Math.ceil(this.oAudio.pcmData.length / this._samplePerPx) / this.waveWidth;
 
-      let i = 0;
-      // HACK: 画像描画を別スレッドに投げる
-      setInterval(() => {
-        if (i >= waveCount) {
-          return;
-        }
+
+      const fragment = document.createDocumentFragment();
+      
+      for (let i = 0; i <= waveCount; i++) {
+        // 各行のコンテナ作成
+        const rowContainer = document.createElement("div");
+        rowContainer.classList.add("rowContainer");
+
+        // 上余白コンテナ作成
+        const upperContainer = document.createElement("div");
+        upperContainer.classList.add("upperContainer");
+
+        upperContainer.style.height = this.upperHeight + "px";
+        
+        // oWaveを入れるコンテナ作成
         const cvsContainer = document.createElement("div");
         cvsContainer.classList.add("cvsContainer");
-        this.stackWaveContainer.appendChild(cvsContainer);
 
-        const oWave = new OWave(this.oAudio, cvsContainer, this.waveHeight);
-        oWave._samplePerPx = this._samplePerPx
+        cvsContainer.style.height = this.waveHeight + "px";
+        cvsContainer.style.margin = this.waveMargin + "px 0";
 
-        oWave.leftPoint = (this.waveWidth) * oWave.samplePerPx * i;
+        // oWave作成
+        this.createWave(cvsContainer, i);
 
-        oWave.drawWave();
 
-        i++;
+        rowContainer.appendChild(upperContainer);
+        rowContainer.appendChild(cvsContainer);
+        fragment.appendChild(rowContainer);
 
-        if (i >= waveCount) {
-          resolve();
-        }
-      }, 0);
+        document.title = (i / waveCount * 100 | 0) + "%";
+      }
+
+      document.title = "";
+      this.stackWaveContainer.appendChild(fragment);
+
+      resolve();
     });
+  }
+
+  createWave(cvsContainer, stackIndex) {
+    const oWave = new OWave(this.oAudio, cvsContainer, this.waveHeight, this.stackWaveContainer.clientWidth);
+    oWave._samplePerPx = this._samplePerPx;
+    oWave.leftPoint = (this.waveWidth) * oWave.samplePerPx * stackIndex;
+    oWave.drawWave();
+
+    this.oWaveList[stackIndex] = oWave;
+  }
+
+  resizeWave() {
+    // this.createWaveStack(false);
   }
 }
 
@@ -405,22 +486,22 @@ class OUtility {
 /**
  * メイン実行部
  */
-let oAudio;
+let oAudio, oStackWave;
 (async () => {
   const srcList = [
     "./assets/audio/WDC_Fu_Vocal_2.wav",
     "./assets/audio/__誰より好きなのに.wav",
     "./assets/audio/_Happy Funny Lucky_真乃.wav",
+    "./assets/audio/仮_虹になれ_サビ01.wav",
 
   ]
 
-  oAudio = new OAudio(srcList[2]);
+  oAudio = new OAudio(srcList[3]);
   await oAudio.getAudioBuffer();
-  console.log(oAudio);
+  // console.log(oAudio);
 
 
   const stackWaveContainer = document.querySelector(".stackWaveContainer");
-  const oStackWave = new OStackWave(oAudio, stackWaveContainer);
-  console.log(oStackWave);
+  oStackWave = new OStackWave(oAudio, stackWaveContainer);
+  // console.log(oStackWave);
 })();
-
