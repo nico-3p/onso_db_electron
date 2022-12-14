@@ -24,7 +24,7 @@
 }
 
 progress {
-    -webkit-appearance: none;
+    /* -webkit-appearance: none; */
 }
 ::-webkit-progress-bar {
     background-color: gray;

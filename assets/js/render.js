@@ -390,7 +390,8 @@ class OStackWave {
 
 
 
-  async createWaveStack() {
+  createWaveStack() {
+    // NOTE: 同期処理の最適解が見つからない...
     return new Promise((resolve) => {
       // 余白なしの波形部分
       this.waveWidth = this.stackWaveContainer.clientWidth - this.horizontalMargin * 2;
@@ -399,41 +400,53 @@ class OStackWave {
       const waveCount = Math.ceil(this.oAudio.pcmData.length / this._samplePerPx) / this.waveWidth;
 
 
-      const fragment = document.createDocumentFragment();
+      const footProg = document.getElementById("footProg");
+      footProg.max = waveCount;
+      const footMsg = document.getElementById("footMsg");
+
+
+      // const fragment = document.createDocumentFragment();
+
+      for (let i = 0; i < waveCount; i++) {
+        setTimeout(() => {
+          // 各行のコンテナ作成
+          const rowContainer = document.createElement("div");
+          rowContainer.classList.add("rowContainer");
       
-      for (let i = 0; i <= waveCount; i++) {
-        // 各行のコンテナ作成
-        const rowContainer = document.createElement("div");
-        rowContainer.classList.add("rowContainer");
+          // 上余白コンテナ作成
+          const upperContainer = document.createElement("div");
+          upperContainer.classList.add("upperContainer");
+      
+          upperContainer.style.height = this.upperHeight + "px";
+          
+          // oWaveを入れるコンテナ作成
+          const cvsContainer = document.createElement("div");
+          cvsContainer.classList.add("cvsContainer");
+      
+          cvsContainer.style.height = this.waveHeight + "px";
+          cvsContainer.style.margin = this.waveMargin + "px 0";
+      
+          // oWave作成
+          this.createWave(cvsContainer, i);
+      
+      
+          rowContainer.appendChild(upperContainer);
+          rowContainer.appendChild(cvsContainer);
+          // fragment.appendChild(rowContainer);
+          this.stackWaveContainer.appendChild(rowContainer);
+      
+          footMsg.textContent = (i / waveCount * 100 | 0) + "%";
+          console.log(i);
+          footProg.value = i;
 
-        // 上余白コンテナ作成
-        const upperContainer = document.createElement("div");
-        upperContainer.classList.add("upperContainer");
-
-        upperContainer.style.height = this.upperHeight + "px";
-        
-        // oWaveを入れるコンテナ作成
-        const cvsContainer = document.createElement("div");
-        cvsContainer.classList.add("cvsContainer");
-
-        cvsContainer.style.height = this.waveHeight + "px";
-        cvsContainer.style.margin = this.waveMargin + "px 0";
-
-        // oWave作成
-        this.createWave(cvsContainer, i);
-
-
-        rowContainer.appendChild(upperContainer);
-        rowContainer.appendChild(cvsContainer);
-        fragment.appendChild(rowContainer);
-
-        document.title = (i / waveCount * 100 | 0) + "%";
+          if(i >= waveCount-1) {
+            footMsg.textContent = "完了";
+            footProg.value = waveCount;
+            // this.stackWaveContainer.appendChild(fragment);
+            resolve();          
+          }
+        }, 0);
       }
-
-      document.title = "";
-      this.stackWaveContainer.appendChild(fragment);
-
-      resolve();
     });
   }
 
@@ -493,10 +506,10 @@ let oAudio, oStackWave;
     "./assets/audio/__誰より好きなのに.wav",
     "./assets/audio/_Happy Funny Lucky_真乃.wav",
     "./assets/audio/仮_虹になれ_サビ01.wav",
-
+    "./assets/audio/01.wav",
   ]
 
-  oAudio = new OAudio(srcList[3]);
+  oAudio = new OAudio(srcList[0]);
   await oAudio.getAudioBuffer();
   // console.log(oAudio);
 
