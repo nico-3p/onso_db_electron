@@ -98,7 +98,7 @@ class OAudio {
       }
 
       // const sPoint = this.audioElement.currentTime * this.sampleRate; // 現在の再生フレーム位置
-      // OCanvas.synchronizePlayPoint(sPoint); // 再描画
+      // OSelectShape.synchronizePlayPoint(sPoint); // 再描画
     }, 1000 / 60);
   }
 
@@ -110,7 +110,7 @@ class OAudio {
     clearInterval(this.timer_play);
 
     // const sPoint = this.playStartSec * this.sampleRate;
-    // OCanvas.synchronizePlayPoint(sPoint);
+    // OSelectShape.synchronizePlayPoint(sPoint);
   }
 
 
@@ -165,6 +165,9 @@ class OWave {
   waveStep = 1;
   waveLineWidth = 1;
 
+  oSelectShape = null;
+  isSelecting = false;
+
   /**
    * @param {OAudio} oAudio 描画したい音声でインスタンス化されたOAudio
    * @param {document} cvsContainer canvasを格納するコンテナ
@@ -194,7 +197,6 @@ class OWave {
   }
 
 
-
   // height
   get height() {
     return this._height;
@@ -222,18 +224,43 @@ class OWave {
    * イベント作成
    */
   addEvent() {
-    /**
-     * 範囲選択系
-     */
+    /** 範囲選択 マウスダウン */
     this.cvsContainer.addEventListener("mousedown", (e) => {
-      const ox = e.offsetX;
-      const oy = e.offsetY;
-      console.log("x: " + ox + "\ty: " + oy + "\ti: " + this.lineIndex);
+      const x = e.clientX - this.cvsContainer.getBoundingClientRect().left;
+      console.log("x: " + x + "\ti: " + this.lineIndex);
 
-      const oc = new OCanvas(this.cvsContainer, this.lineIndex);
-      console.log(oc);
-      oc.createLine();
-    }), false;
+      if (!!this.oSelectShape) {
+        this.oSelectShape.destructor();
+        delete this.oSelectShape;
+      }
+
+      // インスタンス
+      this.oSelectShape = new OSelectShape(this.cvsContainer, this.lineIndex);
+      console.log(this.oSelectShape);
+
+      // 描画
+      this.oSelectShape.createShape(x);
+
+      // 選択中フラグ
+      this.isSelecting = true;
+    }, false);
+
+
+    /** 範囲選択 マウスムーブ */
+    this.cvsContainer.addEventListener("mousemove", (e) => {
+      if (!this.isSelecting) return;
+
+      const x = e.clientX - this.cvsContainer.getBoundingClientRect().left;
+
+      this.oSelectShape.resizeShape(x);
+    }, false);
+
+
+    /** 範囲選択 マウスアップ */
+    this.cvsContainer.addEventListener("mouseup", (e) => {
+  
+      this.isSelecting = false;
+    }, false);
   }
 
 
@@ -352,9 +379,15 @@ class OWave {
 /**
  * 図形描画
  */
-class OCanvas {
+class OSelectShape {
+  /** 範囲選択開始座標 */
+  sx;
+  /** 範囲選択終了座標 */
+  ex;
+
   constructor(cvsContainer, lineIndex) {
     this.cvsContainer = cvsContainer;
+    /** 何行目か */
     this.lineIndex = lineIndex;
 
     this.createContainer();
@@ -364,15 +397,22 @@ class OCanvas {
    * クラスを削除する際に使用してください
    */
   destructor() {
-
+    this.deleteContainer();
   }
 
 
+  /**
+   * 矩形を格納するコンテナの作成
+   */
   createContainer() {
     this.shapeContainer = document.createElement("div");
     this.shapeContainer.classList.add("shapeContainer");
 
     this.cvsContainer.appendChild(this.shapeContainer);
+  }
+
+  deleteContainer() {
+    this.cvsContainer.removeChild(this.shapeContainer);
   }
 
   /**
@@ -386,10 +426,29 @@ class OCanvas {
     return elm;
   }
 
-  createLine() {
+  createShape(sx, ex = null) {
+    this.sx = sx;
+    this.ex = ex === null ? sx : ex; // 未指定の時はそのまま代入、未指定でない時はsxを代入
+
     this.shapeElem = this.createShapeElem();
 
+    this.resizeShape();
+
     this.shapeContainer.appendChild(this.shapeElem);
+  }
+
+  resizeShape(ex = this.ex, sx = this.sx) {
+    this.sx = sx;
+    this.ex = ex;
+    
+    const left = Math.min(this.sx, this.ex);
+    const right = Math.max(this.sx, this.ex);
+
+    const x = left;
+    const w = right - left <= 0 ? 1 : right - left;
+
+    this.shapeElem.style.left = x + "px";
+    this.shapeElem.style.width = w + "px";
   }
 }
 
@@ -573,10 +632,10 @@ class OUtility {
 let oAudio, oStackWave;
 (async () => {
   const srcList = [
+    "./assets/audio/仮_虹になれ_サビ01.wav",
     "./assets/audio/WDC_Fu_Vocal_2.wav",
     "./assets/audio/__誰より好きなのに.wav",
     "./assets/audio/_Happy Funny Lucky_真乃.wav",
-    "./assets/audio/仮_虹になれ_サビ01.wav",
     "./assets/audio/01.wav",
   ]
 
