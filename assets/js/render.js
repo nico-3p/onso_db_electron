@@ -169,16 +169,23 @@ class OWave {
    * @param {OAudio} oAudio 描画したい音声でインスタンス化されたOAudio
    * @param {document} cvsContainer canvasを格納するコンテナ
    * @param {number} height canvasの高さ
+   * @param {number} lineIndex 何行目か
    */
-  constructor(oAudio, cvsContainer, height, width = 0) {
+  constructor(oAudio, cvsContainer, height, width = 0, lineIndex = 0) {
     this.oAudio = oAudio;
     this.cvsContainer = cvsContainer;
 
     this.width = width;
     this._height = height;
 
+    this.lineIndex = lineIndex;
+
+    this.waveSvg.style.height = height;
     this.waveSvg.classList.add("waveSvg");
     this.cvsContainer.appendChild(this.waveSvg);
+
+
+    this.addEvent();
 
     if (this.width === 0) {
       this.resizeWave();
@@ -194,6 +201,7 @@ class OWave {
   }
   set height(h) {
     this._height = h;
+    this.waveSvg.height = this._height;
     this.clearWave();
     this.resizeWave();
     this.drawWave();
@@ -208,6 +216,24 @@ class OWave {
     this.clearWave();
     this.resizeWave();
     this.drawWave();
+  }
+
+  /**
+   * イベント作成
+   */
+  addEvent() {
+    /**
+     * 範囲選択系
+     */
+    this.cvsContainer.addEventListener("mousedown", (e) => {
+      const ox = e.offsetX;
+      const oy = e.offsetY;
+      console.log("x: " + ox + "\ty: " + oy + "\ti: " + this.lineIndex);
+
+      const oc = new OCanvas(this.cvsContainer, this.lineIndex);
+      console.log(oc);
+      oc.createLine();
+    }), false;
   }
 
 
@@ -324,6 +350,51 @@ class OWave {
 
 
 /**
+ * 図形描画
+ */
+class OCanvas {
+  constructor(cvsContainer, lineIndex) {
+    this.cvsContainer = cvsContainer;
+    this.lineIndex = lineIndex;
+
+    this.createContainer();
+  }
+
+  /**
+   * クラスを削除する際に使用してください
+   */
+  destructor() {
+
+  }
+
+
+  createContainer() {
+    this.shapeContainer = document.createElement("div");
+    this.shapeContainer.classList.add("shapeContainer");
+
+    this.cvsContainer.appendChild(this.shapeContainer);
+  }
+
+  /**
+   * 範囲選択用の矩形Elementの作成
+   * @returns 矩形Element
+   */
+  createShapeElem() {
+    const elm = document.createElement("div");
+    elm.classList.add("selectShape");
+
+    return elm;
+  }
+
+  createLine() {
+    this.shapeElem = this.createShapeElem();
+
+    this.shapeContainer.appendChild(this.shapeElem);
+  }
+}
+
+
+/**
  * 波形積層
  */
 class OStackWave {
@@ -332,7 +403,7 @@ class OStackWave {
   upperHeight = 16; // 上余白コンテナの縦幅 [px]
 
   waveHeight = 70; // 波形の縦幅 [px]
-  waveMargin = 2; // 波形の上下方向の余白 [px]
+  waveMargin = 0; // 波形の上下方向の余白 [px]
 
   _samplePerPx = 128; // 1px毎に何サンプル入っているか [sample]
 
@@ -451,7 +522,7 @@ class OStackWave {
   }
 
   createWave(cvsContainer, stackIndex) {
-    const oWave = new OWave(this.oAudio, cvsContainer, this.waveHeight, this.stackWaveContainer.clientWidth);
+    const oWave = new OWave(this.oAudio, cvsContainer, this.waveHeight, this.stackWaveContainer.clientWidth, stackIndex);
     oWave._samplePerPx = this._samplePerPx;
     oWave.leftPoint = (this.waveWidth) * oWave.samplePerPx * stackIndex;
     oWave.drawWave();
@@ -511,10 +582,10 @@ let oAudio, oStackWave;
 
   oAudio = new OAudio(srcList[0]);
   await oAudio.getAudioBuffer();
-  // console.log(oAudio);
+  console.log(oAudio);
 
 
   const stackWaveContainer = document.querySelector(".stackWaveContainer");
   oStackWave = new OStackWave(oAudio, stackWaveContainer);
-  // console.log(oStackWave);
+  console.log(oStackWave);
 })();
