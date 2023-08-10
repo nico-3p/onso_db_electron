@@ -8,6 +8,8 @@ class OAudio {
 
   playStartSec = 0;
 
+  lttbThreshold = 2;
+
   /**
    * @param {string} audioPath 音声ファイルのパス
    */
@@ -35,6 +37,8 @@ class OAudio {
     this.pcmData = this.audioBuffer.getChannelData(0);
 
     // this.sourceNode.buffer = this.audioBuffer;
+
+    this.lttb = OUtility.resample_LTTB(this.pcmData, this.lttbThreshold);
   }
 
   /**
@@ -162,6 +166,8 @@ class OWave {
   _samplePerPx = 128;
 
   waveSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  waveCanvas = document.createElement('canvas');
+  waveCtx = this.waveCanvas.getContext("2d");
   waveStep = 1;
   waveLineWidth = 1;
 
@@ -183,9 +189,27 @@ class OWave {
 
     this.lineIndex = lineIndex;
 
-    this.waveSvg.style.height = height;
-    this.waveSvg.classList.add("waveSvg");
-    this.cvsContainer.appendChild(this.waveSvg);
+    // this.waveSvg.style.height = height;
+    // this.waveSvg.classList.add("waveSvg");
+    // this.cvsContainer.appendChild(this.waveSvg);
+
+
+
+    this.dpr = window.devicePixelRatio || 1;
+    
+    this.waveCanvas.width = this.width * this.dpr;
+    this.waveCanvas.height = this._height * this.dpr;
+    
+    this.waveCtx.scale(this.dpr,this.dpr);
+    
+    this.waveCanvas.style.width = this.width + 'px';
+    this.waveCanvas.style.height = this._height + 'px';
+    
+    // this.waveCanvas.width = this.width;
+    // this.waveCanvas.height = this._height;
+
+    this.waveCanvas.classList.add("waveSvg");
+    this.cvsContainer.appendChild(this.waveCanvas);
 
 
     this.addEvent();
@@ -263,8 +287,6 @@ class OWave {
     }, false);
   }
 
-
-
   /**
    * 波形の削除
    */
@@ -279,7 +301,8 @@ class OWave {
     this.clacCvsSize();
 
     // this.waveSvg.setAttribute("width", this.width);
-    this.waveSvg.setAttribute("height", this.height);
+    // this.waveSvg.setAttribute("height", this.height);
+    this.waveCanvas.setAttribute("height", this.height);
     // this.waveSvg.setAttribute("viewbox", `0 0 ${this.width} ${this.height}`);
   }
 
@@ -296,7 +319,8 @@ class OWave {
    */
   drawWave() {
     const paramList = this.drawWave_clacPram();
-    this.drawWave_pushSvg(paramList);
+    // this.drawWave_pushSvg(paramList);
+    this.drawWave_onCanvas(paramList);
 
     // this.setWaveColor();
   }
@@ -311,11 +335,17 @@ class OWave {
     let x = 0;
     let i = this.leftPoint;
 
+    // let lttbThreshold = this._samplePerPx / 4;
+    let lttbThreshold = 32;
+    // const resampleData = OUtility.resample_LTTB(this.oAudio.pcmData, lttbThreshold);
+
     while (true) {
       if (i >= this.oAudio.pcmData.length) break;
       if (x > this.width) break;
 
-      const newD = this.oAudio.pcmData.slice(i, i + this._samplePerPx * this.waveStep);
+      // const newD = this.oAudio.pcmData.slice(i, i + this._samplePerPx * this.waveStep);
+      // const newD = resampleData.slice(i/lttbThreshold|0, (i + this._samplePerPx * this.waveStep)/lttbThreshold|0);
+      const newD = this.oAudio.lttb.slice(i/this.oAudio.lttbThreshold|0, (i + this._samplePerPx * this.waveStep)/this.oAudio.lttbThreshold|0);
       const max = Math.max(...newD);
       const min = Math.min(...newD);
 
@@ -372,6 +402,19 @@ class OWave {
     });
 
     this.waveSvg.appendChild(fragment);
+  }
+  drawWave_onCanvas(paramList) {
+    this.waveCtx.lineWidth = this.waveLineWidth;
+    this.waveCtx.strokeStyle = OUtility.hsv2rgb(180).hex;
+
+    this.waveCtx.beginPath(); // 新しいパスを開始
+
+    paramList.forEach((e, i) => {
+      this.waveCtx.moveTo(e.x + 0.5, e.ys); // ペンを (30, 50) へ移動
+      this.waveCtx.lineTo(e.x + 0.5, e.ye); // 直線を (150, 100) へ描く
+    });
+
+    this.waveCtx.stroke(); // パスを描画
   }
 }
 
@@ -623,6 +666,15 @@ class OUtility {
       rgb: c, r: c[0], g: c[1], b: c[2],
     };
   }
+
+
+  static resample_LTTB(data, threshold) {
+    const newArr = Array.from(data).map((e, i) => [i, e]);
+    let lttb = largestTriangleThreeBuckets(newArr, (newArr.length / threshold | 0), 0, 1);
+    lttb = lttb.map(e => e[1]);
+
+    return lttb;
+  }
 }
 
 
@@ -639,7 +691,7 @@ let oAudio, oStackWave;
     "./assets/audio/01.wav",
   ]
 
-  oAudio = new OAudio(srcList[0]);
+  oAudio = new OAudio(srcList[2]);
   await oAudio.getAudioBuffer();
   console.log(oAudio);
 
