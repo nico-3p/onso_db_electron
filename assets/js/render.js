@@ -1,3 +1,6 @@
+let oAudio, oStackWave;
+
+
 /**
  * 音声全般処理部
  */
@@ -168,6 +171,7 @@ class OWave {
   waveSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   waveCanvas = document.createElement('canvas');
   waveCtx = this.waveCanvas.getContext("2d");
+
   waveStep = 1;
   waveLineWidth = 1;
 
@@ -212,12 +216,14 @@ class OWave {
     this.cvsContainer.appendChild(this.waveCanvas);
 
 
-    this.addEvent();
+    // this.addEvent();
 
     if (this.width === 0) {
       this.resizeWave();
     }
     // this.drawWave();
+
+    this.createSelect();
   }
 
 
@@ -371,6 +377,8 @@ class OWave {
 
       i += this._samplePerPx * this.waveStep;
       x += this.waveStep;
+
+      this.rightPoint = i;
     }
 
     return paramList;
@@ -410,11 +418,38 @@ class OWave {
     this.waveCtx.beginPath(); // 新しいパスを開始
 
     paramList.forEach((e, i) => {
-      this.waveCtx.moveTo(e.x + 0.5, e.ys); // ペンを (30, 50) へ移動
-      this.waveCtx.lineTo(e.x + 0.5, e.ye); // 直線を (150, 100) へ描く
+      this.waveCtx.moveTo(e.x + 0.5, e.ys);
+      this.waveCtx.lineTo(e.x + 0.5, e.ye);
     });
 
     this.waveCtx.stroke(); // パスを描画
+  }
+
+  /**
+   * 選択範囲要素の作成
+   */
+  createSelect() {
+    this.oSelectShape = new OSelectShape(this.cvsContainer, this.lineIndex);
+
+    this.oSelectShape.createShape(-1, -1);
+  }
+  /**
+   * 選択範囲のサイズ変更
+   */
+  resizeSelect(sx, ex) {
+    this.oSelectShape.resizeShape(ex, sx);
+  }
+  /**
+   * 選択範囲を隠す
+   */
+  hideSelect() {
+    this.oSelectShape.resizeShape(-1, -1);
+  }
+  /**
+   * 選択範囲を画面いっぱいに伸ばす
+   */
+  fillSelect() {
+    this.oSelectShape.resizeShape(this.cvsContainer.clientWidth, -1);
   }
 }
 
@@ -434,6 +469,10 @@ class OSelectShape {
     this.lineIndex = lineIndex;
 
     this.createContainer();
+  }
+
+  get rightX() {
+    return this.cvsContainer.clientWidth;
   }
 
   /**
@@ -639,6 +678,83 @@ class OStackWave {
 
 
 /**
+ * マウスイベント
+ */
+class OMouseEvent {
+  constructor() {
+    this.eventCatcher = document.querySelector('.waveSelectEventCatcher');
+
+    this.rowContainerHeight = oStackWave.waveHeight + oStackWave.upperHeight;
+
+    this.addEvent();
+  }
+
+  addEvent() {
+    /** 範囲選択 マウスダウン */
+    this.eventCatcher.addEventListener("mousedown", (e) => {
+      
+      
+      this.isSelecting = true;
+
+      for (const oWave of oStackWave.oWaveList) {
+        oWave.hideSelect();
+      }
+      
+      this.sIdx = this.calcIndexWithY(e.offsetY);
+      this.sx = e.offsetX;
+      this.startSamplePoint = this.x2Sample(oStackWave.oWaveList[this.sIdx], this.sx);
+      
+      this.eIdx = this.sIdx;
+      this.ex = this.sx;
+      this.endSamplePoint = this.x2Sample(oStackWave.oWaveList[this.eIdx], this.ex);
+
+      this.drawSelect();
+    }, false);
+
+
+    /** 範囲選択 マウスムーブ */
+    this.eventCatcher.addEventListener("mousemove", (e) => {
+      if (!this.isSelecting) return;
+
+      this.eIdx = this.calcIndexWithY(e.offsetY);
+      this.ex = e.offsetX;
+      this.endSamplePoint = this.x2Sample(oStackWave.oWaveList[this.eIdx], this.ex);
+
+      this.drawSelect();
+    }, false);
+
+
+    /** 範囲選択 マウスアップ */
+    this.eventCatcher.addEventListener("mouseup", (e) => {
+      this.isSelecting = false;
+
+    }, false);
+  }
+
+  drawSelect() {
+    for (const oWave of oStackWave.oWaveList) {
+      oWave.oSelectShape.sx = this.sample2X(oWave, this.startSamplePoint);
+      oWave.oSelectShape.ex = this.sample2X(oWave, this.endSamplePoint);
+
+      oWave.oSelectShape.resizeShape();
+    }
+  }
+
+  calcIndexWithY(y) {
+    return y / this.rowContainerHeight|0;
+  }
+
+  x2Sample(oWave, x) {
+    return oWave.leftPoint + (oWave.samplePerPx * x);
+  }
+
+  sample2X(oWave, sample) {
+    return (sample - oWave.leftPoint) / oWave.samplePerPx|0;
+  }
+}
+
+
+/**
  * 静的メソッド群
  */
 class OUtility {
@@ -681,7 +797,6 @@ class OUtility {
 /**
  * メイン実行部
  */
-let oAudio, oStackWave;
 (async () => {
   const srcList = [
     "./assets/audio/仮_虹になれ_サビ01.wav",
@@ -691,12 +806,13 @@ let oAudio, oStackWave;
     "./assets/audio/01.wav",
   ]
 
-  oAudio = new OAudio(srcList[2]);
+  oAudio = new OAudio(srcList[1]);
   await oAudio.getAudioBuffer();
   console.log(oAudio);
-
 
   const stackWaveContainer = document.querySelector(".stackWaveContainer");
   oStackWave = new OStackWave(oAudio, stackWaveContainer);
   console.log(oStackWave);
+
+  new OMouseEvent();
 })();
